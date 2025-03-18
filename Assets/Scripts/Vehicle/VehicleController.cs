@@ -19,6 +19,9 @@ namespace WinterUniverse
         public float GasInput;
         public float TurnInput;
         public bool BrakeInput;
+        [SerializeField] private VehicleController _target;
+        public Vector3 LookPoint;
+        public bool FireInput;
 
         private Rigidbody _rb;
         private Chassis _chassis;
@@ -31,6 +34,18 @@ namespace WinterUniverse
         private float _forwardVelocity;
         private float _rightVelocity;
         private float _currentSpeed;
+        private float _durabilityCurrent;
+        private float _durabilityMax;
+        private bool _isDead;
+
+        public VehicleController Target => _target;
+        public Chassis Chassis => _chassis;
+        public Cabin Cabin => _cabin;
+        public Truck Truck => _truck;
+        public float DurabilityCurrent => _durabilityCurrent;
+        public float DurabilityMax => _durabilityMax;
+        public float DurabilityPercent => _durabilityCurrent / _durabilityMax;
+        public bool IsDead => _isDead;
 
         private void Start()
         {
@@ -59,9 +74,17 @@ namespace WinterUniverse
             _chassis = LeanPool.Spawn(chassis.Model, transform).GetComponent<Chassis>();
             _cabin = LeanPool.Spawn(cabin.Model, _chassis.CabinRoot).GetComponent<Cabin>();
             _truck = LeanPool.Spawn(truck.Model, _chassis.TruckRoot).GetComponent<Truck>();
+            _durabilityMax = _chassis.Config.Durability + _cabin.Config.Durability + _truck.Config.Durability;
+            RepairVehicle();
             _rb.centerOfMass = transform.InverseTransformPoint(_chassis.CenterOfMass.position) + transform.InverseTransformPoint(_cabin.CenterOfMass.position) + transform.InverseTransformPoint(_truck.CenterOfMass.position);
             _rb.mass = _chassis.Config.Mass + _cabin.Config.Mass + _truck.Config.Mass;
             _weaponSlots = GetComponentsInChildren<WeaponSlot>();
+            foreach (WeaponSlot slot in _weaponSlots)
+            {
+                slot.Initialize(this);
+            }
+            _cabin.EngineSource.clip = _cabin.Config.EngineClip;
+            _cabin.EngineSource.Play();
         }
 
         public void DeleteVehicle()
@@ -73,6 +96,7 @@ namespace WinterUniverse
             }
             if (_cabin != null)
             {
+                _cabin.EngineSource.Stop();
                 LeanPool.Despawn(_cabin.gameObject);
                 _cabin = null;
             }
@@ -84,18 +108,67 @@ namespace WinterUniverse
             _weaponSlots = null;
         }
 
+        public void DamageVehicle(float value)
+        {
+            if (_isDead)
+            {
+                return;
+            }
+            _durabilityCurrent = Mathf.Clamp(_durabilityCurrent - value, 0f, _durabilityMax);
+            if (_durabilityCurrent <= 0f)
+            {
+                _isDead = true;
+            }
+        }
+
+        public void RepairVehicle()
+        {
+            _isDead = false;
+            _durabilityCurrent = _durabilityMax;
+            _chassis.RepairArmor();
+            _cabin.RepairArmor();
+            _truck.RepairArmor();
+        }
+
+        public void SetTarget(VehicleController target)
+        {
+            if (target != null)
+            {
+                _target = target;
+            }
+            else
+            {
+                ResetTarget();
+            }
+        }
+
+        public void ResetTarget()
+        {
+            _target = null;
+        }
+
         public void OnFixedUpdate()
         {
+            if (_isDead)
+            {
+                return;
+            }
             ClampInputs();
             HandleGasInput();
             HandleTurnInput();
             HandleGravity();
+            HandleWeaponSlots();
+            HandleAudio();
         }
 
         private void ClampInputs()
         {
             GasInput = Mathf.Clamp(GasInput, -1f, 1f);
             TurnInput = Mathf.Clamp(TurnInput, -1f, 1f);
+            if (_target != null && _target.IsDead)
+            {
+                ResetTarget();
+            }
         }
 
         private void HandleGasInput()
@@ -168,6 +241,30 @@ namespace WinterUniverse
 
         }
 
+        private void HandleWeaponSlots()
+        {
+            if (_weaponSlots == null)
+            {
+                return;
+            }
+            foreach (WeaponSlot slot in _weaponSlots)
+            {
+                slot.OnFixedUpdate();
+            }
+        }
+
+        private void HandleAudio()
+        {
+            if (_currentSpeed >= 0)
+            {
+                _cabin.EngineSource.pitch = Mathf.Lerp(0.5f, 2.5f, Mathf.InverseLerp(0f, _cabin.Config.MaxForwardSpeed, _currentSpeed));
+            }
+            else
+            {
+                _cabin.EngineSource.pitch = Mathf.Lerp(0.5f, 2.5f, Mathf.InverseLerp(0f, -_cabin.Config.MaxBackwardSpeed, _currentSpeed));
+            }
+        }
+
         private float GetAccelerationMultiplier()
         {
             if (_currentSpeed >= 0f)
@@ -209,22 +306,6 @@ namespace WinterUniverse
             else
             {
                 return 1f;
-            }
-        }
-
-        public void HandleWeaponSlots(Vector3 lookDirection, bool isFiring)
-        {
-            if (_weaponSlots == null)
-            {
-                return;
-            }
-            foreach (WeaponSlot slot in _weaponSlots)
-            {
-                if (slot.Weapon != null)
-                {
-                    slot.Weapon.LookDirection = lookDirection;
-                    slot.Weapon.FireInput = isFiring;
-                }
             }
         }
 

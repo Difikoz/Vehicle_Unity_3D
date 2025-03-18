@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2a89460fe30b54d84fc83c79bd9b07, type: 3}
+  m_Name: Gun
+  m_EditorClassIdentifier: 
+  _id: Gun
+  _displayName: Gun
+  _description: Description
+  _color: {r: 1, g: 1, b: 1, a: 1}
+  _icon: {fileID: 0}
+  _model: {fileID: 1001352684084259284, guid: 44e0bebab37ef054289c95e3c56e0b20, type: 3}
+  _damage: 10
+  _fireRate: 300
+  _range: 150
+  _force: 100
+  _spread: 2
+  _turnSpeed: 180
+  _maxTurnAngle: 720
+  _aimSpeed: 90
+  _minAimAngle: 45
+  _maxAimAngle: 45
+  _projectile: {fileID: 11400000, guid: 611e862afa33bb14da6e6cda01981ce8, type: 2}
+  _projectilePerShot: 1
+  _fireClips:
+  - {fileID: 8300000, guid: af66162561d2eed40ad49268cab318bb, type: 3}

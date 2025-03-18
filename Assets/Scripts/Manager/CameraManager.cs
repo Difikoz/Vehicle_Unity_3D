@@ -5,6 +5,7 @@ namespace WinterUniverse
     public class CameraManager : MonoBehaviour
     {
         [SerializeField] private VehicleController _vehicle;
+        [SerializeField] private float _raycastDistance = 1000f;
         [SerializeField] private float _followSpeed = 100f;
         [SerializeField] private Transform _rotationRoot;
         [SerializeField] private float _rotateSpeed = 45f;
@@ -14,6 +15,8 @@ namespace WinterUniverse
         [SerializeField] private float _collisionRadius = 0.25f;
         [SerializeField] private float _collisionAvoidanceSpeed = 10f;
         [SerializeField] private LayerMask _obstacleMask;
+        [SerializeField] private LayerMask _vehicleMask;
+        [SerializeField] private LayerMask _detectableMask;
 
         private PlayerInputActions _inputActions;
         private Camera _camera;
@@ -53,19 +56,29 @@ namespace WinterUniverse
             transform.position = Vector3.Lerp(transform.position, _vehicle.transform.position, _followSpeed * Time.deltaTime);
             HandleFreeLook();
             HandleCollision();
-            _vehicle.HandleWeaponSlots(_camera.transform.forward, _inputActions.Camera.Fire.IsPressed());
+            if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out _cameraHit, _raycastDistance, _detectableMask))
+            {
+                _vehicle.LookPoint = _cameraHit.point;
+            }
+            else
+            {
+                _vehicle.LookPoint = _camera.transform.position + _camera.transform.forward * _raycastDistance;
+            }
+            _vehicle.FireInput = _inputActions.Camera.Fire.IsPressed();
         }
 
         private void OnLockTargetPerfomed()
         {
-            if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out _cameraHit, 1000f))// add layer mask!
+            if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out _cameraHit, _raycastDistance, _vehicleMask))
             {
                 VehicleController vehicle = _cameraHit.transform.GetComponentInParent<VehicleController>();
                 if (vehicle != null)
                 {
-                    // set target
+                    _vehicle.SetTarget(vehicle);
+                    return;
                 }
             }
+            _vehicle.ResetTarget();
         }
 
         private void HandleFreeLook()

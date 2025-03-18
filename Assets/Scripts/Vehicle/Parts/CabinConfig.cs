@@ -11,6 +11,7 @@ namespace WinterUniverse
         [SerializeField] private float _maxBackwardSpeed = 25f;
         [SerializeField] private AnimationCurve _accelerationCurve;
         [SerializeField] private AnimationCurve _decelerationCurve;
+        [SerializeField] private AudioClip _engineClip;
 
         public float AccelerationForce => _accelerationForce;
         public float DecelerationForce => _decelerationForce;
@@ -18,5 +19,6 @@ namespace WinterUniverse
         public float MaxBackwardSpeed => _maxBackwardSpeed;
         public AnimationCurve AccelerationCurve => _accelerationCurve;
         public AnimationCurve DecelerationCurve => _decelerationCurve;
+        public AudioClip EngineClip => _engineClip;
     }
 }
