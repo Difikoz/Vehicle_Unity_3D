@@ -27,6 +27,7 @@ namespace WinterUniverse
         {
             _vehicle.GasInput = _inputActions.Vehicle.Gas.ReadValue<float>();
             _vehicle.TurnInput = _inputActions.Vehicle.Turn.ReadValue<float>();
+            _vehicle.BrakeInput = _inputActions.Vehicle.Brake.IsPressed();
         }
     }
 }

@@ -13,6 +13,7 @@ namespace WinterUniverse
         [SerializeField] private Transform _collisionRoot;
         [SerializeField] private float _collisionRadius = 0.25f;
         [SerializeField] private float _collisionAvoidanceSpeed = 10f;
+        [SerializeField] private LayerMask _obstacleMask;
 
         private PlayerInputActions _inputActions;
         private Camera _camera;
@@ -40,8 +41,11 @@ namespace WinterUniverse
             _inputActions = new();
             _inputActions.Enable();
             _inputActions.Camera.LockTarget.performed += ctx => OnLockTargetPerfomed();
+            transform.position = _vehicle.transform.position;
             _xRot = _rotationRoot.localEulerAngles.x;
             _collisionDefaultOffset = _collisionRoot.localPosition.z;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         public void OnLateUpdate()
@@ -82,7 +86,7 @@ namespace WinterUniverse
         {
             _collisionRequiredOffset = _collisionDefaultOffset;
             Vector3 direction = (_collisionRoot.position - _rotationRoot.position).normalized;
-            if (Physics.SphereCast(_rotationRoot.position, _collisionRadius, direction, out _collisionHit, Mathf.Abs(_collisionRequiredOffset)))// add layer mask!
+            if (Physics.SphereCast(_rotationRoot.position, _collisionRadius, direction, out _collisionHit, Mathf.Abs(_collisionRequiredOffset), _obstacleMask))
             {
                 _collisionRequiredOffset = -(Vector3.Distance(_rotationRoot.position, _collisionHit.point) - _collisionRadius);
             }
