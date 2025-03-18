@@ -6,7 +6,6 @@ namespace WinterUniverse
 {
     public abstract class WeaponController : MonoBehaviour
     {
-        [SerializeField] protected GameObject _testProjectileController;
         [SerializeField] protected WeaponConfig _config;
         [SerializeField] protected Transform _turnRoot;
         [SerializeField] protected Transform _aimRoot;
@@ -41,10 +40,10 @@ namespace WinterUniverse
             _fireTime = Time.time;
             for (int i = 0; i < _config.ProjectilePerShot; i++)
             {
-                LeanPool.Spawn(_testProjectileController,
+                GameManager.StaticInstance.PrefabsManager.GetProjectile(
                     _shootPoints[_currentShootPointIndex].position,
-                    Quaternion.Euler(_shootPoints[_currentShootPointIndex].eulerAngles + GetSpread())).
-                    GetComponent<ProjectileController>().Launch(_vehicle, _config, _config.Projectile);
+                    Quaternion.Euler(_shootPoints[_currentShootPointIndex].eulerAngles + GetSpread())
+                    ).GetComponent<ProjectileController>().Launch(_vehicle, _config, _config.Projectile);
             }
             if (_currentShootPointIndex < _shootPoints.Count - 1)
             {

@@ -1,4 +1,5 @@
 using Lean.Pool;
+using System;
 using UnityEngine;
 
 namespace WinterUniverse
@@ -6,11 +7,8 @@ namespace WinterUniverse
     [RequireComponent(typeof(Rigidbody))]
     public class VehicleController : MonoBehaviour
     {
-        [Header("Test Configs")]
-        public bool CreateTestVehicle;
-        public ChassisConfig TestChassisConfig;
-        public CabinConfig TestCabinConfig;
-        public TruckConfig TestTruckConfig;
+        public Action OnFactionChanged;
+
         [Header("Defaukt Configs")]
         public ChassisConfig DefaultChassisConfig;
         public CabinConfig DefaultCabinConfig;
@@ -23,6 +21,7 @@ namespace WinterUniverse
         public Vector3 LookPoint;
         public bool FireInput;
 
+        private FactionConfig _faction;
         private Rigidbody _rb;
         private Chassis _chassis;
         private Cabin _cabin;
@@ -38,6 +37,7 @@ namespace WinterUniverse
         private float _durabilityMax;
         private bool _isDead;
 
+        public FactionConfig Faction => _faction;
         public VehicleController Target => _target;
         public Chassis Chassis => _chassis;
         public Cabin Cabin => _cabin;
@@ -46,21 +46,6 @@ namespace WinterUniverse
         public float DurabilityMax => _durabilityMax;
         public float DurabilityPercent => _durabilityCurrent / _durabilityMax;
         public bool IsDead => _isDead;
-
-        private void Start()
-        {
-            Initialize();
-        }
-
-        private void FixedUpdate()
-        {
-            OnFixedUpdate();
-            if (CreateTestVehicle)
-            {
-                CreateTestVehicle = false;
-                CreateVehicle(TestChassisConfig, TestCabinConfig, TestTruckConfig);
-            }
-        }
 
         public void Initialize()
         {
@@ -307,6 +292,12 @@ namespace WinterUniverse
             {
                 return 1f;
             }
+        }
+
+        public void ChangeFaction(FactionConfig config)
+        {
+            _faction = config;
+            OnFactionChanged?.Invoke();
         }
 
         private void OnDrawGizmos()

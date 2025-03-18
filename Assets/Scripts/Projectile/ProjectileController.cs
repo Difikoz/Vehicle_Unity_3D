@@ -9,7 +9,6 @@ namespace WinterUniverse
     public class ProjectileController : MonoBehaviour
     {
         [SerializeField] private Rigidbody _rb;
-        [SerializeField] private LayerMask _damageableMask;
 
         private VehicleController _vehicle;
         private WeaponConfig _weaponConfig;
@@ -55,7 +54,7 @@ namespace WinterUniverse
         {
             if (_projectileConfig.SplashRadius > 0f)
             {
-                Collider[] colliders = Physics.OverlapSphere(transform.position, _projectileConfig.SplashRadius, _damageableMask);
+                Collider[] colliders = Physics.OverlapSphere(transform.position, _projectileConfig.SplashRadius, GameManager.StaticInstance.LayersManager.VehicleMask);
                 foreach (Collider collider in colliders)
                 {
                     if (collider.TryGetComponent(out VehiclePart vehiclePart) && !_damagedParts.Contains(vehiclePart))
