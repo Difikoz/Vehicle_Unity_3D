@@ -9,30 +9,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e9b6658f38cee04994513ab6b94b2a2, type: 3}
-  m_Name: Bug
+  m_Script: {fileID: 11500000, guid: 50ca0108531868943afaffb1207a6438, type: 3}
+  m_Name: Cabin
   m_EditorClassIdentifier: 
-  _id: Bug
-  _displayName: Bug
+  _id: Cabin
+  _displayName: Cabin
   _description: Description
   _color: {r: 1, g: 1, b: 1, a: 1}
   _icon: {fileID: 0}
-  _prefab: {fileID: 4445385464168921999, guid: 368c5d2116df517489acc2c2f438af50, type: 3}
+  _model: {fileID: 6148317747268781973, guid: 4598091b1c0657c48a1d7ccf088d7065, type: 3}
+  _mass: 250
   _accelerationForce: 5000
   _decelerationForce: 1000
-  _brakeForce: 10000
-  _maxForwardSpeed: 100
-  _maxBackwardSpeed: 50
-  _turnAngle: 45
-  _turnSpeed: 90
+  _maxForwardSpeed: 50
+  _maxBackwardSpeed: 25
   _accelerationCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0.2
-      inSlope: 0.8
-      outSlope: 0.8
+      value: 0.5
+      inSlope: 0.5
+      outSlope: 0.5
       tangentMode: 34
       weightedMode: 0
       inWeight: 0
@@ -40,8 +38,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 0.8
-      outSlope: 0.8
+      inSlope: 0.5
+      outSlope: 0.5
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334
@@ -66,30 +64,6 @@ MonoBehaviour:
       value: 0.1
       inSlope: -0.9
       outSlope: -0.9
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  _turnCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0.2
-      inSlope: 0.8
-      outSlope: 0.8
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0.8
-      outSlope: 0.8
       tangentMode: 34
       weightedMode: 0
       inWeight: 0.33333334

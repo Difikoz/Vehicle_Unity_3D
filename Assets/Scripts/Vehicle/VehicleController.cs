@@ -1,3 +1,4 @@
+using Lean.Pool;
 using UnityEngine;
 
 namespace WinterUniverse
@@ -5,14 +6,24 @@ namespace WinterUniverse
     [RequireComponent(typeof(Rigidbody))]
     public class VehicleController : MonoBehaviour
     {
-        [SerializeField] private VehicleConfig _config;
-        [SerializeField] private Transform _centerOfMass;
-        [SerializeField] private WheelController[] _wheels;
+        [Header("Test Configs")]
+        public bool CreateTestVehicle;
+        public ChassisConfig TestChassisConfig;
+        public CabinConfig TestCabinConfig;
+        public TruckConfig TestTruckConfig;
+        [Header("Defaukt Configs")]
+        public ChassisConfig DefaultChassisConfig;
+        public CabinConfig DefaultCabinConfig;
+        public TruckConfig DefaultTruckConfig;
+        [Header("Inputs")]
         public float GasInput;
         public float TurnInput;
         public bool BrakeInput;
 
         private Rigidbody _rb;
+        private Chassis _chassis;
+        private Cabin _cabin;
+        private Truck _truck;
         private WeaponSlot[] _weaponSlots;
         private float _gasTorque;
         private float _brakeTorque;
@@ -29,13 +40,48 @@ namespace WinterUniverse
         private void FixedUpdate()
         {
             OnFixedUpdate();
+            if (CreateTestVehicle)
+            {
+                CreateTestVehicle = false;
+                CreateVehicle(TestChassisConfig, TestCabinConfig, TestTruckConfig);
+            }
         }
 
         public void Initialize()
         {
             _rb = GetComponent<Rigidbody>();
+            CreateVehicle(DefaultChassisConfig, DefaultCabinConfig, DefaultTruckConfig);
+        }
+
+        public void CreateVehicle(ChassisConfig chassis, CabinConfig cabin, TruckConfig truck)
+        {
+            DeleteVehicle();
+            _chassis = LeanPool.Spawn(chassis.Model, transform).GetComponent<Chassis>();
+            _cabin = LeanPool.Spawn(cabin.Model, _chassis.CabinRoot).GetComponent<Cabin>();
+            _truck = LeanPool.Spawn(truck.Model, _chassis.TruckRoot).GetComponent<Truck>();
+            _rb.centerOfMass = transform.InverseTransformPoint(_chassis.CenterOfMass.position) + transform.InverseTransformPoint(_cabin.CenterOfMass.position) + transform.InverseTransformPoint(_truck.CenterOfMass.position);
+            _rb.mass = _chassis.Config.Mass + _cabin.Config.Mass + _truck.Config.Mass;
             _weaponSlots = GetComponentsInChildren<WeaponSlot>();
-            _rb.centerOfMass = _centerOfMass.localPosition;
+        }
+
+        public void DeleteVehicle()
+        {
+            if (_truck != null)
+            {
+                LeanPool.Despawn(_truck.gameObject);
+                _truck = null;
+            }
+            if (_cabin != null)
+            {
+                LeanPool.Despawn(_cabin.gameObject);
+                _cabin = null;
+            }
+            if (_chassis != null)
+            {
+                LeanPool.Despawn(_chassis.gameObject);
+                _chassis = null;
+            }
+            _weaponSlots = null;
         }
 
         public void OnFixedUpdate()
@@ -60,39 +106,39 @@ namespace WinterUniverse
             {
                 if (_forwardVelocity >= 0f)
                 {
-                    if (_forwardVelocity < _config.MaxForwardSpeed)
+                    if (_forwardVelocity < _cabin.Config.MaxForwardSpeed)
                     {
-                        _gasTorque = GasInput * _config.AccelerationForce * GetAccelerationMultiplier();
+                        _gasTorque = GasInput * _cabin.Config.AccelerationForce * GetAccelerationMultiplier();
                     }
                 }
                 else
                 {
-                    _gasTorque = GasInput * _config.DecelerationForce * GetDecelerationMultiplier();
+                    _gasTorque = GasInput * _cabin.Config.DecelerationForce * GetDecelerationMultiplier();
                 }
             }
             else if (GasInput < 0f)
             {
                 if (_forwardVelocity <= 0f)
                 {
-                    if (_forwardVelocity > -_config.MaxBackwardSpeed)
+                    if (_forwardVelocity > -_cabin.Config.MaxBackwardSpeed)
                     {
-                        _gasTorque = GasInput * _config.AccelerationForce * GetAccelerationMultiplier();
+                        _gasTorque = GasInput * _cabin.Config.AccelerationForce * GetAccelerationMultiplier();
                     }
                 }
                 else
                 {
-                    _gasTorque = GasInput * _config.DecelerationForce * GetDecelerationMultiplier();
+                    _gasTorque = GasInput * _cabin.Config.DecelerationForce * GetDecelerationMultiplier();
                 }
             }
             else
             {
-                _brakeTorque = _config.DecelerationForce * GetDecelerationMultiplier();
+                _brakeTorque = _cabin.Config.DecelerationForce * GetDecelerationMultiplier();
             }
             if (BrakeInput)
             {
-                _brakeTorque = _config.BrakeForce;
+                _brakeTorque = _chassis.Config.BrakeForce;
             }
-            foreach (WheelController controller in _wheels)
+            foreach (WheelController controller in _chassis.Wheels)
             {
                 controller.Collider.motorTorque = controller.Type != WheelType.Turn ? _gasTorque : 0f;
                 controller.Collider.brakeTorque = _brakeTorque;
@@ -105,8 +151,8 @@ namespace WinterUniverse
 
         private void HandleTurnInput()
         {
-            _turnAngle = Mathf.MoveTowardsAngle(_turnAngle, TurnInput * _config.TurnAngle, _config.TurnSpeed * GetTurnMultiplier() * Time.fixedDeltaTime);
-            foreach (WheelController controller in _wheels)
+            _turnAngle = Mathf.MoveTowardsAngle(_turnAngle, TurnInput * _chassis.Config.TurnAngle, _chassis.Config.TurnSpeed * GetTurnMultiplier() * Time.fixedDeltaTime);
+            foreach (WheelController controller in _chassis.Wheels)
             {
                 if (controller.Type != WheelType.Gas)
                 {
@@ -126,11 +172,11 @@ namespace WinterUniverse
         {
             if (_currentSpeed >= 0f)
             {
-                return _config.AccelerationCurve.Evaluate(Mathf.InverseLerp(_config.MaxForwardSpeed, 0f, _currentSpeed));
+                return _cabin.Config.AccelerationCurve.Evaluate(Mathf.InverseLerp(_cabin.Config.MaxForwardSpeed, 0f, _currentSpeed));
             }
             else
             {
-                return _config.AccelerationCurve.Evaluate(Mathf.InverseLerp(-_config.MaxBackwardSpeed, 0f, _currentSpeed));
+                return _cabin.Config.AccelerationCurve.Evaluate(Mathf.InverseLerp(-_cabin.Config.MaxBackwardSpeed, 0f, _currentSpeed));
             }
         }
 
@@ -138,11 +184,11 @@ namespace WinterUniverse
         {
             if (_currentSpeed > 1f)
             {
-                return _config.DecelerationCurve.Evaluate(Mathf.InverseLerp(_config.MaxForwardSpeed, 0f, _currentSpeed));
+                return _cabin.Config.DecelerationCurve.Evaluate(Mathf.InverseLerp(_cabin.Config.MaxForwardSpeed, 0f, _currentSpeed));
             }
             else if (_currentSpeed < -1f)
             {
-                return _config.DecelerationCurve.Evaluate(Mathf.InverseLerp(-_config.MaxBackwardSpeed, 0f, _currentSpeed));
+                return _cabin.Config.DecelerationCurve.Evaluate(Mathf.InverseLerp(-_cabin.Config.MaxBackwardSpeed, 0f, _currentSpeed));
             }
             else
             {
@@ -154,11 +200,11 @@ namespace WinterUniverse
         {
             if (_currentSpeed > 1f)
             {
-                return _config.TurnCurve.Evaluate(Mathf.InverseLerp(_config.MaxForwardSpeed, 0f, _currentSpeed));
+                return _chassis.Config.TurnCurve.Evaluate(Mathf.InverseLerp(_cabin.Config.MaxForwardSpeed, 0f, _currentSpeed));
             }
             else if (_currentSpeed < -1f)
             {
-                return _config.TurnCurve.Evaluate(Mathf.InverseLerp(-_config.MaxBackwardSpeed, 0f, _currentSpeed));
+                return _chassis.Config.TurnCurve.Evaluate(Mathf.InverseLerp(-_cabin.Config.MaxBackwardSpeed, 0f, _currentSpeed));
             }
             else
             {
@@ -168,6 +214,10 @@ namespace WinterUniverse
 
         public void HandleWeaponSlots(Vector3 lookDirection, bool isFiring)
         {
+            if (_weaponSlots == null)
+            {
+                return;
+            }
             foreach (WeaponSlot slot in _weaponSlots)
             {
                 if (slot.Weapon != null)
@@ -175,6 +225,15 @@ namespace WinterUniverse
                     slot.Weapon.LookDirection = lookDirection;
                     slot.Weapon.FireInput = isFiring;
                 }
+            }
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (_rb != null)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireSphere(transform.TransformPoint(_rb.centerOfMass), 0.25f);
             }
         }
     }
